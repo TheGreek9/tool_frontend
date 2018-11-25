@@ -1,9 +1,10 @@
 from django.urls import path
 
+from .views import IndexView, DetailsView
 from . import views
 
 
 urlpatterns = [
-    path('', views.index, name='index'),
-    path('details/<slug:file_name>/', views.details, name='details')
+    path('', IndexView.as_view(), name='index'),
+    path('details/<slug:file_name>/', DetailsView.as_view(), name='details')
 ]

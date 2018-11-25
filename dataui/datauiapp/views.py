@@ -5,46 +5,49 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from collections import namedtuple
-
 from django.urls import reverse
+from django.views import View
 
 from .models import TestModel
 
-headers = None
-model_fields = [a.name for a in TestModel._meta.get_fields()]
-Headers = None
 
-def index(request):
-    if request.method == 'GET':
+class IndexView(View):
+    def get(self, request):
         return render(request, 'datauiapp/index.html')
-    elif request.method == 'POST':
+
+    def post(self, request):
         file_name = request.POST['csv_file'].split('.csv')[0]
         return HttpResponseRedirect(reverse('details', args=(file_name,)))
 
 
-def details(request, file_name):
-    file_path = os.path.join('/Users/Spyro/Developer/graphql_ui',
-                             '{}.csv'.format(file_name))
+class DetailsView(View):
+    file_path = None
+    header_cols = None
+    Headers = None
+    model_fields = [a.name for a in TestModel._meta.get_fields()]
 
-    header_cols = [a for a in csv.reader(open(file_path, "r"))][0]
-    Headers = namedtuple('Headers', header_cols)
-
-    if request.method == "GET":
+    def get(self, request, *args, **kwargs):
+        self.file_path = self.get_file_path(kwargs)
+        self.header_cols = self.get_header_cols()
+        self.Headers = namedtuple('Headers', self.header_cols)
         context = {
-            'csv_col_list': Headers._fields,
-            'model_fields': model_fields,
-            'file_name': file_name,
+            'csv_col_list': self.Headers._fields,
+            'model_fields': self.model_fields,
+            'file_name': 'next_test',
         }
         return render(request, 'datauiapp/csv_table.html', context)
-    elif request.method == "POST":
-        csv_rows = [Headers._make(a) for a in csv.reader(open(file_path,
-                                                              "r"))][1:]
+
+    def post(self, request, *args, **kwargs):
+        self.file_path = self.get_file_path(kwargs)
+        self.header_cols = self.get_header_cols()
+        self.Headers = namedtuple('Headers', self.header_cols)
+        csv_rows = [self.Headers._make(a) for a in csv.reader(open(
+            self.file_path, "r"))][1:]
 
         test_list = []
-
         for row in csv_rows:
             giant_dict = {}
-            for field in model_fields:
+            for field in self.model_fields:
                 field_attr = getattr(row, request.POST[field], '')
                 if field_attr:
                     giant_dict.update({field: field_attr})
@@ -52,3 +55,10 @@ def details(request, file_name):
             test_list.append(giant_dict)
 
         return HttpResponse("{}".format(test_list))
+
+    def get_file_path(self, kwargs_dict):
+        return os.path.join('/Users/Spyro/Developer/graphql_ui',
+                            '{}.csv'.format(kwargs_dict.get('file_name')))
+
+    def get_header_cols(self):
+        return [a for a in csv.reader(open(self.file_path, "r"))][0]

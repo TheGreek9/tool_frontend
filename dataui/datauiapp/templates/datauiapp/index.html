@@ -7,7 +7,7 @@
     <body>
         <form action="{% url 'index' %}" method="post">
             {% csrf_token %}
-                Select a file: <input type="file" name="csv_file"><br><br>
+                Case File: <input type="file" name="csv_file"><br><br>
             <input type="submit" value="Submit Mapping">
         </form>
     </body>

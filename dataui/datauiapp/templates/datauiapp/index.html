@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Fuuuuuuuuuuuck</title>
-    </head>
-    <body>
-        <form action="{% url 'index' %}" method="post">
-            {% csrf_token %}
-                Case File: <input type="file" name="csv_file"><br><br>
-            <input type="submit" value="Submit Mapping">
-        </form>
-    </body>
+<head>
+    <meta charset="UTF-8">
+    <title>Import File</title>
+</head>
+<body>
+    <ul>
+        <li><a href="{% url 'cases' %}">Cases</a></li>
+        <li><a href="{% url 'contacts' %}">Contacts</a></li>
+    </ul>
+</body>
 </html>

@@ -8,9 +8,10 @@ from collections import namedtuple
 
 from django.urls import reverse
 
+from .models import TestModel
+
 headers = None
-model_fields = ['firstname', 'middlename', 'lastname', 'dob', 'phone1',
-                'street1', 'street2', 'city', 'state', 'zip']
+model_fields = [a.name for a in TestModel._meta.get_fields()]
 Headers = None
 
 def index(request):
@@ -44,8 +45,9 @@ def details(request, file_name):
         for row in csv_rows:
             giant_dict = {}
             for field in model_fields:
-                giant_dict.update(
-                    {field: getattr(row, request.POST[field], '')})
+                field_attr = getattr(row, request.POST[field], '')
+                if field_attr:
+                    giant_dict.update({field: field_attr})
 
             test_list.append(giant_dict)
 

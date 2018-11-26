@@ -2,7 +2,7 @@ import csv
 import os
 
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.template import loader
 from collections import namedtuple
 from django.urls import reverse
@@ -42,7 +42,7 @@ class IndexView(View):
                         new_dict.update({key: getattr(row, val)})
                 case_list.append(new_dict)
 
-            return HttpResponse("{}".format(case_list))
+            return JsonResponse(case_list, safe=False)
 
 class FileView(View):
     next_uri = None

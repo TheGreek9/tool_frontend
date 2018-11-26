@@ -8,6 +8,8 @@ from collections import namedtuple
 from django.urls import reverse
 from django.views import View
 
+from .helpers import get_csv_rows, \
+    attach_client_info, get_file_path, get_csv_tuples
 from .models import ClientModel, CaseModel
 
 super_long_dicts = {}
@@ -21,8 +23,26 @@ class IndexView(View):
         if not any(super_long_dicts):
             return HttpResponseRedirect(reverse('index'))
         else:
-            return HttpResponse("Bewbs")
+            print("****{}".format(super_long_dicts))
+            case_csv_path = super_long_dicts.get('case_file_path')
+            client_csv_path = super_long_dicts.get('client_file_path')
+            case_rows = get_csv_rows(case_csv_path)
+            case_dict = super_long_dicts.get('case_dict')
+            client_dict = super_long_dicts.get('client_dict')
 
+            case_list = []
+            for row in case_rows:
+                new_dict = {}
+                for key, val in case_dict.items():
+                    if key == 'caseclient':
+                        client_id = getattr(row, case_dict.get(key))
+                        new_dict.update({'caseclient': attach_client_info(
+                            client_id, client_dict, client_csv_path)})
+                    elif getattr(row, val, None):
+                        new_dict.update({key: getattr(row, val)})
+                case_list.append(new_dict)
+
+            return HttpResponse("{}".format(case_list))
 
 class FileView(View):
     next_uri = None
@@ -67,6 +87,7 @@ class ColumnDetailsView(View):
         return render(request, 'datauiapp/csv_table_2.html', context)
 
     def post(self, request, *args, **kwargs):
+        self.file_path = get_file_path(kwargs)
         giant_dict = {}
         for field in self.model_fields:
             if request.POST[field]:
@@ -96,25 +117,3 @@ class ClientsDetailView(ColumnDetailsView):
     def attach_dicts(self, major_dict, tiny_dict):
         major_dict.update({'client_file_path': self.file_path,
                            'client_dict': tiny_dict})
-
-
-def get_file_path(kwargs_dict):
-    return os.path.join('/Users/Spyro/Developer/graphql_ui',
-                        '{}.csv'.format(kwargs_dict.get('file_name')))
-
-
-def get_csv_tuples(file_path):
-    header_cols = [a for a in csv.reader(open(file_path, "r"))][0]
-    return namedtuple('CSVRow', header_cols)
-
-
-def get_csv_rows(file_path):
-    CSVRow = get_csv_tuples(file_path)
-    return [CSVRow._make(a) for a in csv.reader(open(file_path, "r"))][1:]
-
-
-def attach_client_info(client_id, client_mapping, client_file_path):
-    csv_rows = get_csv_rows(client_file_path)
-    for row in csv_rows:
-        pass
-    return dict()

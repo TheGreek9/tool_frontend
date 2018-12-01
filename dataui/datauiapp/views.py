@@ -1,4 +1,5 @@
 import csv
+import json
 import os
 
 from django.shortcuts import render
@@ -23,49 +24,53 @@ class IndexView(View):
         if not any(super_long_dicts):
             return HttpResponseRedirect(reverse('index'))
         else:
-            print("****{}".format(super_long_dicts))
-            case_csv_path = super_long_dicts.get('case_file_path')
-            client_csv_path = super_long_dicts.get('client_file_path')
-            case_rows = get_csv_rows(case_csv_path)
             case_dict = super_long_dicts.get('case_dict')
             client_dict = super_long_dicts.get('client_dict')
 
-            case_list = []
-            for row in case_rows:
-                new_dict = {}
-                for key, val in case_dict.items():
-                    if key == 'caseclient':
-                        client_id = getattr(row, case_dict.get(key))
-                        new_dict.update({'caseclient': attach_client_info(
-                            client_id, client_dict, client_csv_path)})
-                    elif getattr(row, val, None):
-                        new_dict.update({key: getattr(row, val)})
-                case_list.append(new_dict)
+            new_dict = {}
+            for key, val in case_dict.items():
+                if key == 'caseclient':
+                    new_dict.update({'caseclient': client_dict})
+                else:
+                    new_dict.update({key: val})
 
-            return JsonResponse(case_list, safe=False)
+            response = HttpResponse(json.dumps(new_dict))
+            response['Content-Type'] = 'application/json'
+            response['Content-Length'] = len(str(new_dict))
+            response['Content-Disposition'] = 'attachment; ' \
+                                              'filename=json_test.json'
+
+            return response
 
 class FileView(View):
     next_uri = None
     reverse_uri = None
+    model_name = None
 
     def get(self, request):
-        return render(request, 'datauiapp/cases.html', {'next_uri':
-                                                            self.next_uri})
+        content = dict(next_uri=self.next_uri,
+                       model_name=self.model_name)
+        return render(request, 'datauiapp/cases.html', content)
 
     def post(self, request):
         file_name = request.POST['csv_file'].split('.csv')[0]
+        related_file = request.POST['related_file'].split('.csv')[0] if \
+            request.POST['related_file'] else None
+        next_kwargs = dict(file_name=file_name, related_file=related_file)
         return HttpResponseRedirect(reverse(self.reverse_uri,
-                                            args=(file_name,)))
+                                            kwargs=next_kwargs))
 
 
 class CasesFileView(FileView):
     next_uri = 'cases'
     reverse_uri = 'case_details'
+    model_name = 'Case'
 
 
 class ContactsFileView(FileView):
     next_uri = 'contacts'
     reverse_uri = 'client_details'
+    model_name = 'Client'
 
 
 class ColumnDetailsView(View):
@@ -74,6 +79,7 @@ class ColumnDetailsView(View):
     CSVRow = None
     model_fields = None
     next_uri = None
+    related_file = None
 
     def get(self, request, *args, **kwargs):
         self.file_path = get_file_path(kwargs)
@@ -82,13 +88,16 @@ class ColumnDetailsView(View):
             'csv_col_list': self.CSVRow._fields,
             'model_fields': self.model_fields,
             'file_name': kwargs.get('file_name'),
-            'next_uri': self.next_uri
+            'next_uri': self.next_uri,
+            'related_file': kwargs.get('related_file') if kwargs.get(
+                'related_file') != 'None' else None
         }
         return render(request, 'datauiapp/csv_table_2.html', context)
 
     def post(self, request, *args, **kwargs):
         self.file_path = get_file_path(kwargs)
         giant_dict = {}
+        linking_dict = {}
         for field in self.model_fields:
             if request.POST[field]:
                 giant_dict.update({field: request.POST[field]})

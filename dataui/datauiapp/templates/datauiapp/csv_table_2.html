@@ -1,12 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Fuckin' Imports Man</title>
-</head>
-<body>
-    <h1>Import Mapping</h1>
-
-{% include "datauiapp/csv_table_snippet.html" %}
-</body>
+    <head>
+        <meta charset="UTF-8">
+        <title>Imports Man</title>
+    </head>
+    <body>
+        <h1>Import Mapping</h1>
+        {% if next_uri != "case_details" %}
+            <table>
+                <tr>
+                    <th>Case Connecting Column</th>
+                    {% if related_file %}
+                        <th>Related File Column to Case</th>
+                        <th>Related File Column to Client</th>
+                    {% endif %}
+                    <th>Client Connecting Column</th>
+                </tr>
+                <tr>
+                    <td>{% include "datauiapp/file_col_selection.html" %}</td>
+                    {% if related_file %}
+                        <td>{% include "datauiapp/file_col_selection.html" %}</td>
+                        <td>{% include "datauiapp/file_col_selection.html" %}</td>
+                    {% endif %}
+                    <td>{% include "datauiapp/file_col_selection.html" %}</td>
+                </tr>
+            </table>
+        <br><br>
+        {% endif %}
+        {% include "datauiapp/csv_table_snippet.html" %}
+    </body>
 </html>

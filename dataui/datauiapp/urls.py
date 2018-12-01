@@ -8,8 +8,8 @@ urlpatterns = [
     path('', IndexView.as_view(), name='index'),
     path('cases/', CasesFileView.as_view(), name='cases'),
     path('contacts/', ContactsFileView.as_view(), name='contacts'),
-    path('casedetails/<slug:file_name>/', CasesDetailView.as_view(),
-         name='case_details'),
-    path('clientdetails/<slug:file_name>/', ClientsDetailView.as_view(),
-         name='client_details'),
+    path('casedetails/<slug:file_name>/<slug:related_file>/',
+         CasesDetailView.as_view(), name='case_details'),
+    path('clientdetails/<slug:file_name>/<slug:related_file>/',
+         ClientsDetailView.as_view(), name='client_details'),
 ]

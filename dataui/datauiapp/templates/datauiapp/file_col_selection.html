@@ -1,0 +1,6 @@
+<select name="{{ field }}">
+    <option value=""></option>
+    {% for col in csv_col_list %}
+    <option value="{{ col }}">{{ col }}</option>
+    {% endfor %}
+</select>

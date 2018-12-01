@@ -7,7 +7,8 @@
     <body>
         <form action="{% url next_uri %}" method="post">
             {% csrf_token %}
-                 <input type="file" name="csv_file"><br><br>
+            {{model_name}} File<input type="file" name="csv_file"><br>
+            Related File (if any)<input type="file" name="related_file"><br><br>
             <input type="submit" value="Submit Mapping">
         </form>
     </body>

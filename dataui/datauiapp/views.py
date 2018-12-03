@@ -9,6 +9,7 @@ from collections import namedtuple
 from django.urls import reverse
 from django.views import View
 
+from .forms import CaseForm, ClientForm
 from .helpers import get_csv_rows, \
     attach_client_info, get_file_path, get_csv_tuples
 from .models import ClientModel, CaseModel
@@ -55,7 +56,7 @@ class FileView(View):
     def post(self, request):
         file_name = request.POST['csv_file'].split('.csv')[0]
         related_file = request.POST['related_file'].split('.csv')[0] if \
-            request.POST['related_file'] else None
+            request.POST['related_file'] else 'None'
         next_kwargs = dict(file_name=file_name, related_file=related_file)
         return HttpResponseRedirect(reverse(self.reverse_uri,
                                             kwargs=next_kwargs))
@@ -83,14 +84,19 @@ class ColumnDetailsView(View):
 
     def get(self, request, *args, **kwargs):
         self.file_path = get_file_path(kwargs)
-        self.CSVRow = get_csv_tuples(self.file_path)
+        self.CSVRow = get_csv_tuples(self.file_path)._fields
+        choices = tuple(enumerate(self.CSVRow, start=1))
+        case_form = CaseForm(**dict(choices=choices))
+        # case_form = CaseForm()
+        # client_form = ClientForm(choices=choices)
         context = {
-            'csv_col_list': self.CSVRow._fields,
-            'model_fields': self.model_fields,
+            'csv_col_list': self.CSVRow,
             'file_name': kwargs.get('file_name'),
             'next_uri': self.next_uri,
             'related_file': kwargs.get('related_file') if kwargs.get(
-                'related_file') != 'None' else None
+                'related_file') != 'None' else None,
+            'case_form': case_form,
+            # 'client_form': client_form
         }
         return render(request, 'datauiapp/csv_table_2.html', context)
 
@@ -98,9 +104,12 @@ class ColumnDetailsView(View):
         self.file_path = get_file_path(kwargs)
         giant_dict = {}
         linking_dict = {}
-        for field in self.model_fields:
-            if request.POST[field]:
-                giant_dict.update({field: request.POST[field]})
+        self.CSVRow = get_csv_tuples(self.file_path)._fields
+        choices = tuple(enumerate(self.CSVRow, start=1))
+        form = CaseForm(request.POST, **dict(choices=choices))
+        if form.is_valid():
+            for key, val in form.cleaned_data.items():
+                giant_dict.update({key: choices[1 - int(val)][1]})
 
         self.attach_dicts(super_long_dicts, giant_dict)
 
